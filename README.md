@@ -4,6 +4,6 @@
 
 ```powershell
   dotnet ef migrations add ...
-  dotnet ef migrations update
+  dotnet ef database update
 ```
 

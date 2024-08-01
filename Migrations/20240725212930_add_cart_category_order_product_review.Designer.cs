@@ -3,6 +3,7 @@ using System;
 using EcommerceBackend.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace dotNetEcommerceBackend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20240725212930_add_cart_category_order_product_review")]
+    partial class add_cart_category_order_product_review
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -200,9 +203,6 @@ namespace dotNetEcommerceBackend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<int>("Role")
-                        .HasColumnType("integer");
-
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("text");
@@ -210,16 +210,6 @@ namespace dotNetEcommerceBackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Email = "admin@ecommerce.com",
-                            Password = "$2a$11$RfkEEuEg10m9Fgj9OUgA9eCPpRVzGzip60wT4qiUMnfK613tj1t9W",
-                            Role = 0,
-                            Username = "admin"
-                        });
                 });
 
             modelBuilder.Entity("EcommerceBackend.Models.Cart", b =>
@@ -242,7 +232,7 @@ namespace dotNetEcommerceBackend.Migrations
                         .IsRequired();
 
                     b.HasOne("EcommerceBackend.Models.Product", "Product")
-                        .WithMany("OrderDetails")
+                        .WithMany()
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -290,11 +280,6 @@ namespace dotNetEcommerceBackend.Migrations
             modelBuilder.Entity("EcommerceBackend.Models.Order", b =>
                 {
                     b.Navigation("ProductList");
-                });
-
-            modelBuilder.Entity("EcommerceBackend.Models.Product", b =>
-                {
-                    b.Navigation("OrderDetails");
                 });
 #pragma warning restore 612, 618
         }

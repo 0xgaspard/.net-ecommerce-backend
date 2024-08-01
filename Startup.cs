@@ -1,4 +1,5 @@
 using EcommerceBackend.Data;
+using EcommerceBackend.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -38,9 +39,14 @@ public class Startup
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidIssuer = Configuration["Jwt:Issuer"],
-        ValidAudience = Configuration["Jwt:Audience"]
+        ValidAudience = Configuration["Jwt:Audience"],
       };
     });
+
+    services.AddAuthorization(options =>
+        {
+          options.AddPolicy("AdminPolicy", policy => policy.RequireRole("Admin"));
+        });
 
     services.AddSwaggerGen();
   }

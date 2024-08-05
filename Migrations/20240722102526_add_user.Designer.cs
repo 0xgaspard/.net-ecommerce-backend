@@ -8,7 +8,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace dotNetEcommerceBackend.Migrations
+namespace EcommerceBackend.Migrations
 {
     [DbContext(typeof(DataContext))]
     [Migration("20240722102526_add_user")]

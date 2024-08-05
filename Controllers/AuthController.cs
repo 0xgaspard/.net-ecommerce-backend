@@ -8,11 +8,12 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 
+
 namespace EcommerceBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController : ControllerBase
+    public class AuthController : BaseController
     {
         private readonly DataContext _context;
         private readonly IConfiguration _configuration;
@@ -33,7 +34,8 @@ namespace EcommerceBackend.Controllers
             {
                 Username = request.Username,
                 Email = request.Email,
-                Password = BCrypt.Net.BCrypt.HashPassword(request.Password)
+                Password = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                Role = Role.Client,
             };
 
             _context.Users.Add(user);
@@ -53,8 +55,8 @@ namespace EcommerceBackend.Controllers
             var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
-                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()) }),
-                Expires = DateTime.UtcNow.AddDays(7),
+                Subject = new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()), new Claim(ClaimTypes.Role, user.Role.ToString()) }),
+                Expires = DateTime.UtcNow.AddDays(1),
                 SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
                 Issuer = _configuration["Jwt:Issuer"],
                 Audience = _configuration["Jwt:Audience"]
@@ -69,29 +71,27 @@ namespace EcommerceBackend.Controllers
         [HttpGet("logout")]
         public IActionResult Logout()
         {
-            // Implementation for logout
             return Ok(new { message = "User logged out successfully" });
         }
 
         [HttpGet("recoverykey")]
         public IActionResult GetRecoveryKey()
         {
-            // Generate and return a recovery key (for simplicity, using a static key here)
-            var recoveryKey = "static-recovery-key"; // In real scenarios, generate a dynamic key
+            var recoveryKey = "static-recovery-key";
             return Ok(new { recoveryKey });
         }
 
-        [HttpPost("forgetPassword")]
+        [HttpPost("forget-password")]
         public async Task<IActionResult> ForgetPassword(ForgetPasswordDto request)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
                 return NotFound("User not found.");
 
-            if (request.RecoveryKey != "static-recovery-key") // Validate the key
+            if (request.Recoverykey != "static-recovery-key")
                 return BadRequest("Invalid recovery key.");
 
-            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.Newpassword);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Password updated successfully" });

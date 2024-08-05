@@ -10,13 +10,13 @@ using Microsoft.AspNetCore.Authorization;
 namespace EcommerceBackend.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
-    [Authorize]
-    public class CategoryController : BaseController
+    //[ApiController]
+    //[Authorize]
+    public class CategoriesController : BaseController
     {
         private readonly DataContext _context;
 
-        public CategoryController(DataContext context)
+        public CategoriesController(DataContext context)
         {
             _context = context;
         }
@@ -29,7 +29,6 @@ namespace EcommerceBackend.Controllers
             {
                 Id = c.Id,
                 Name = c.Name,
-                Description = c.Description
             });
 
             return Ok(categoryDtos);

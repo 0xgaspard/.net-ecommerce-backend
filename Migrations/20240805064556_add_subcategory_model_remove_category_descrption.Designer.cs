@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EcommerceBackend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240725212930_add_cart_category_order_product_review")]
-    partial class add_cart_category_order_product_review
+    [Migration("20240805064556_add_subcategory_model_remove_category_descrption")]
+    partial class add_subcategory_model_remove_category_descrption
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -57,10 +57,6 @@ namespace EcommerceBackend.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text");
@@ -68,6 +64,62 @@ namespace EcommerceBackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("EcommerceBackend.Models.EmailTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EmailTemplates");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Body = "<h1>Hello,</h1><p>Please verify your email by clicking the link below:</p><a href='{VerificationLink}'>Verify Email</a>",
+                            Subject = "Please verify your email"
+                        });
+                });
+
+            modelBuilder.Entity("EcommerceBackend.Models.EmailVerificationToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Expiration")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EmailVerificationTokens");
                 });
 
             modelBuilder.Entity("EcommerceBackend.Models.Order", b =>
@@ -187,6 +239,28 @@ namespace EcommerceBackend.Migrations
                     b.ToTable("Reviews");
                 });
 
+            modelBuilder.Entity("EcommerceBackend.Models.SubCategory", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CategoryId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
+
+                    b.ToTable("SubCategories");
+                });
+
             modelBuilder.Entity("EcommerceBackend.Models.User", b =>
                 {
                     b.Property<int>("Id")
@@ -203,6 +277,9 @@ namespace EcommerceBackend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("text");
@@ -210,6 +287,16 @@ namespace EcommerceBackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Email = "admin@ecommerce.com",
+                            Password = "$2a$11$hfsgsilX6CtTvt7MRtI.uuZrfjbn0HRt4mZYPFwCUAzMj99B7vUlu",
+                            Role = 0,
+                            Username = "admin"
+                        });
                 });
 
             modelBuilder.Entity("EcommerceBackend.Models.Cart", b =>
@@ -232,7 +319,7 @@ namespace EcommerceBackend.Migrations
                         .IsRequired();
 
                     b.HasOne("EcommerceBackend.Models.Product", "Product")
-                        .WithMany()
+                        .WithMany("OrderDetails")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -272,14 +359,32 @@ namespace EcommerceBackend.Migrations
                     b.Navigation("Product");
                 });
 
+            modelBuilder.Entity("EcommerceBackend.Models.SubCategory", b =>
+                {
+                    b.HasOne("EcommerceBackend.Models.Category", "Category")
+                        .WithMany("SubCategories")
+                        .HasForeignKey("CategoryId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Category");
+                });
+
             modelBuilder.Entity("EcommerceBackend.Models.Category", b =>
                 {
                     b.Navigation("Products");
+
+                    b.Navigation("SubCategories");
                 });
 
             modelBuilder.Entity("EcommerceBackend.Models.Order", b =>
                 {
                     b.Navigation("ProductList");
+                });
+
+            modelBuilder.Entity("EcommerceBackend.Models.Product", b =>
+                {
+                    b.Navigation("OrderDetails");
                 });
 #pragma warning restore 612, 618
         }

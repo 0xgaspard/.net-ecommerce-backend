@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace dotNetEcommerceBackend.Migrations
+namespace EcommerceBackend.Migrations
 {
     [DbContext(typeof(DataContext))]
     [Migration("20240726005047_add_tables")]

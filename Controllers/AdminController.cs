@@ -33,7 +33,6 @@ namespace EcommerceBackend.Controllers
             var category = new Category
             {
                 Name = categoryDto.Name,
-                Description = categoryDto.Description
             };
 
             _context.Categories.Add(category);
@@ -50,7 +49,6 @@ namespace EcommerceBackend.Controllers
             {
                 Id = c.Id,
                 Name = c.Name,
-                Description = c.Description
             });
 
             return Ok(categoryDtos);
@@ -63,7 +61,6 @@ namespace EcommerceBackend.Controllers
             if (category == null) return NotFound();
 
             category.Name = categoryDto.Name;
-            category.Description = categoryDto.Description;
 
             _context.Categories.Update(category);
             await _context.SaveChangesAsync();
@@ -74,18 +71,92 @@ namespace EcommerceBackend.Controllers
         [HttpDelete("categories/{id}")]
         public async Task<IActionResult> DeleteCategory(int id)
         {
-            var category = await _context.Categories.FindAsync(id);
-            if (category == null) return NotFound();
+            try
+            {
+                Console.WriteLine("I am deleting category " + id);
+                var category = await _context.Categories.FindAsync(id);
+                if (category == null) return NotFound();
 
-            _context.Categories.Remove(category);
+                _context.Categories.Remove(category);
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "Category deleted successfully" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"An error occurred: {ex.Message}");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        [HttpGet("categories/{categoryId}/sub")]
+        public async Task<ActionResult<IEnumerable<SubCategoryDto>>> GetSubCategoriesByCategoryId(int categoryId)
+        {
+            var subCategories = await _context.SubCategories
+                                              .Where(sc => sc.CategoryId == categoryId)
+                                              .ToListAsync();
+            var subCategoryDtos = subCategories.ConvertAll(sc => new SubCategoryDto
+            {
+                Id = sc.Id,
+                Name = sc.Name,
+                CategoryId = sc.CategoryId
+            });
+
+            return Ok(subCategoryDtos);
+        }
+
+        [HttpPost("categories/{categoryId}/sub")]
+        public async Task<IActionResult> CreateSubCategory(int categoryId, SubCategoryDto subCategoryDto)
+        {
+            var subCategory = new SubCategory
+            {
+                Name = subCategoryDto.Name,
+                CategoryId = categoryId
+            };
+
+            _context.SubCategories.Add(subCategory);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Category deleted successfully" });
+            return Ok(new { message = "SubCategory created successfully" });
+        }
+
+        [HttpPut("categories/sub/{id}")]
+        public async Task<IActionResult> UpdateSubCategory(int id, SubCategoryDto subCategoryDto)
+        {
+            var subCategory = await _context.SubCategories.FindAsync(id);
+            if (subCategory == null)
+                return NotFound();
+
+            subCategory.Name = subCategoryDto.Name;
+            subCategory.CategoryId = subCategoryDto.CategoryId;
+
+            _context.SubCategories.Update(subCategory);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "SubCategory updated successfully" });
+        }
+
+        [HttpDelete("categories/sub/{id}")]
+        public async Task<IActionResult> DeleteSubCategory(int id)
+        {
+            var subCategory = await _context.SubCategories.FindAsync(id);
+            if (subCategory == null)
+                return NotFound();
+
+            _context.SubCategories.Remove(subCategory);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "SubCategory deleted successfully" });
         }
 
         [HttpPost("products")]
         public async Task<IActionResult> CreateProduct(ProductDto productDto)
         {
+            var categoryExists = await _context.Categories.AnyAsync(c => c.Id == productDto.CategoryId);
+            if (!categoryExists)
+            {
+                return BadRequest("Category does not exist.");
+            }
             var product = new Product
             {
                 Name = productDto.Name,

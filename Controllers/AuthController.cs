@@ -81,17 +81,17 @@ namespace EcommerceBackend.Controllers
             return Ok(new { recoveryKey });
         }
 
-        [HttpPost("forgetPassword")]
+        [HttpPost("forgetpass")]
         public async Task<IActionResult> ForgetPassword(ForgetPasswordDto request)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
             if (user == null)
                 return NotFound("User not found.");
 
-            if (request.RecoveryKey != "static-recovery-key")
+            if (request.Recoverykey != "static-recovery-key")
                 return BadRequest("Invalid recovery key.");
 
-            user.Password = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            user.Password = BCrypt.Net.BCrypt.HashPassword(request.Newpassword);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Password updated successfully" });

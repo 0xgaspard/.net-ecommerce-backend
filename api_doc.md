@@ -304,6 +304,143 @@
 ```
 
 
+#### Create SubCategory
+
+
+
+**Endpoint:** `POST /api/admin/categories/:categoryId/sub`
+
+
+
+**Request:**
+
+
+
+```json
+
+{
+
+  "name": "string",
+
+}
+
+```
+
+
+
+**Response:**
+
+
+
+```json
+
+{
+
+  "message": "Subcategory created successfully"
+
+}
+
+```
+
+
+
+#### List Categories
+
+
+
+**Endpoint:** `GET /api/admin/categories/:categoryId/sub`
+
+
+
+**Response:**
+
+
+
+```json
+
+[
+
+  {
+
+    "id": "integer",
+
+    "name": "string",
+
+    "categoryId": "integer"
+
+  }
+
+]
+
+```
+
+
+
+#### Update Category
+
+
+
+**Endpoint:** `PUT /api/admin/categories/sub/:id`
+
+
+
+**Request:**
+
+
+
+```json
+
+{
+
+  "name": "string",
+
+  "categoryId": "integer"
+
+}
+
+```
+
+
+
+**Response:**
+
+
+
+```json
+
+{
+
+  "message": "Subcategory updated successfully"
+
+}
+
+```
+
+
+
+#### Delete Category
+
+
+
+**Endpoint:** `DELETE /api/admin/categories/sub/:id`
+
+
+
+**Response:**
+
+
+
+```json
+
+{
+
+  "message": "Subcategory deleted successfully"
+
+}
+
+```
+
+
 
 ### Product Management
 
@@ -693,6 +830,37 @@
     "name": "string",
 
     "description": "string"
+
+  }
+
+]
+
+```
+
+
+#### List Subcategories
+
+
+
+**Endpoint:** `GET /api/subcategories/:categoryId`
+
+
+
+**Response:**
+
+
+
+```json
+
+[
+
+  {
+
+    "id": "integer",
+
+    "name": "string",
+
+    "categoryId": "integer"
 
   }
 

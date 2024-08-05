@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace EcommerceBackend.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20240725212930_add_cart_category_order_product_review")]
-    partial class add_cart_category_order_product_review
+    [Migration("20240802201301_emailveriforder")]
+    partial class emailveriforder
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -68,6 +68,62 @@ namespace EcommerceBackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categories");
+                });
+
+            modelBuilder.Entity("EcommerceBackend.Models.EmailTemplate", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EmailTemplates");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Body = "<h1>Hello,</h1><p>Please verify your email by clicking the link below:</p><a href='{VerificationLink}'>Verify Email</a>",
+                            Subject = "Please verify your email"
+                        });
+                });
+
+            modelBuilder.Entity("EcommerceBackend.Models.EmailVerificationToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("Expiration")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsVerified")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("Token")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("EmailVerificationTokens");
                 });
 
             modelBuilder.Entity("EcommerceBackend.Models.Order", b =>
@@ -203,6 +259,9 @@ namespace EcommerceBackend.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<int>("Role")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("text");
@@ -210,6 +269,16 @@ namespace EcommerceBackend.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 1,
+                            Email = "admin@ecommerce.com",
+                            Password = "$2a$11$s7kVibIuYVkePSl5IqKpZe1hNvgzohErDuF.EY3A67aYZDXWqXZG2",
+                            Role = 0,
+                            Username = "admin"
+                        });
                 });
 
             modelBuilder.Entity("EcommerceBackend.Models.Cart", b =>
@@ -232,7 +301,7 @@ namespace EcommerceBackend.Migrations
                         .IsRequired();
 
                     b.HasOne("EcommerceBackend.Models.Product", "Product")
-                        .WithMany()
+                        .WithMany("OrderDetails")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -280,6 +349,11 @@ namespace EcommerceBackend.Migrations
             modelBuilder.Entity("EcommerceBackend.Models.Order", b =>
                 {
                     b.Navigation("ProductList");
+                });
+
+            modelBuilder.Entity("EcommerceBackend.Models.Product", b =>
+                {
+                    b.Navigation("OrderDetails");
                 });
 #pragma warning restore 612, 618
         }

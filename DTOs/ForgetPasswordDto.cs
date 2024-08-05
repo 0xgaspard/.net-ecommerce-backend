@@ -3,7 +3,7 @@ namespace EcommerceBackend.DTOs
     public class ForgetPasswordDto
     {
         public string Email { get; set; }
-        public string RecoveryKey { get; set; }
-        public string NewPassword { get; set; }
+        public string Recoverykey { get; set; }
+        public string Newpassword { get; set; }
     }
 }

@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace dotNetEcommerceBackend.Migrations
+namespace EcommerceBackend.Migrations
 {
     /// <inheritdoc />
     public partial class add_tables : Migration

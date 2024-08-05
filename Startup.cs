@@ -49,6 +49,18 @@ public class Startup
         });
 
     services.AddSwaggerGen();
+    services.AddCors(options =>
+    {
+        options.AddPolicy("AllowAll",
+            builder =>
+            {
+                builder.AllowAnyOrigin()
+                       .AllowAnyMethod()
+                       .AllowAnyHeader();
+            });
+    });
+
+    services.AddControllers();
   }
 
   public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -61,6 +73,8 @@ public class Startup
     }
 
     app.UseRouting();
+    app.UseCors("AllowAll");
+    
     app.UseAuthentication();
     app.UseAuthorization();
 

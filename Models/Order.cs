@@ -26,7 +26,7 @@ namespace EcommerceBackend.Models
 
     public class OrderDetail
     {
-         [Required]
+        [Required]
         public int OrderId { get; set; } 
 
         [Required]

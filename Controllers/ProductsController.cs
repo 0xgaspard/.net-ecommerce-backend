@@ -57,5 +57,25 @@ namespace EcommerceBackend.Controllers
 
             return Ok(productDto);
         }
+
+        [HttpGet("category/{id}")]
+        public async Task<IActionResult> GetProductsByCategoryId(int categoryId)
+        {
+            var products = await _context.Products
+                .Where(p => p.CategoryId == categoryId)
+                .Select(p => new ProductDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    ImgUrl = p.ImgUrl,
+                    Quantity = p.Quantity,
+                    Price = p.Price,
+                    CategoryId = p.CategoryId
+                })
+                .ToListAsync();
+
+            return Ok(products);
+        }
     }
 }

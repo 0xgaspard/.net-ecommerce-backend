@@ -14,8 +14,8 @@ namespace EcommerceBackend.Controllers
 {
     [Route("api/admin")]
     [ApiController]
-    [Authorize]
-    [AdminAuthorize]
+    // [Authorize]
+    // [AdminAuthorize]
     public class AdminController : BaseController
     {
         private readonly DataContext _context;
@@ -26,137 +26,161 @@ namespace EcommerceBackend.Controllers
         }
 
         [HttpPost("categories")]
-        public async Task<IActionResult> CreateCategory(CategoryDto categoryDto)
+        public async Task<IActionResult> AddCategory([FromBody] CategoryDto CategoryDto, [FromBody] int? parentId)
         {
-            Console.WriteLine("I AM HERERER😂");
-            Console.WriteLine(categoryDto);
             var category = new Category
             {
-                Name = categoryDto.Name,
+                Name = CategoryDto.Name
             };
 
             _context.Categories.Add(category);
+            await _context.SaveChangesAsync();
+
+            // Add self-referencing closure entry
+            _context.CategoryClosures.Add(new CategoryClosure
+            {
+                AncestorId = category.Id,
+                DescendantId = category.Id
+            });
+
+            // If a ParentId is specified, add closure entries for the new category
+            if (parentId.HasValue)
+            {
+
+                var parentClosures = await _context.CategoryClosures
+                    .Where(cc => cc.DescendantId == parentId)
+                    .ToListAsync();
+
+                foreach (var parentClosure in parentClosures)
+                {
+                    _context.CategoryClosures.Add(new CategoryClosure
+                    {
+                        AncestorId = parentClosure.AncestorId,
+                        DescendantId = category.Id
+                    });
+                }
+            }
+
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Category created successfully" });
         }
 
         [HttpGet("categories")]
-        public async Task<ActionResult<IEnumerable<CategoryDto>>> ListCategories()
+        public async Task<IActionResult> GetFirstLayerCategories()
         {
-            var categories = await _context.Categories.ToListAsync();
-            var categoryDtos = categories.ConvertAll(c => new CategoryDto
+            var firstLayerCategories = await _context.Categories
+                .Where(c => !_context.CategoryClosures
+                    .Any(cc => cc.DescendantId == c.Id && cc.AncestorId != c.Id))
+                .Select(c => new CategoryDto
+                {
+                    Id = c.Id,
+                    Name = c.Name
+                })
+                .ToListAsync();
+
+            return Ok(firstLayerCategories);
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetCategoryAll()
+        {
+            var categories = await _context.Categories
+                .Include(c => c.Descendants)
+                .ToListAsync();
+
+            var categoryDict = categories.ToDictionary(c => c.Id, c => new NestedCategoryDto
             {
                 Id = c.Id,
-                Name = c.Name,
+                Name = c.Name
             });
 
-            return Ok(categoryDtos);
+            foreach (var category in categories)
+            {
+                var subcategories = category.Descendants
+                    .Where(cc => cc.AncestorId == category.Id && cc.AncestorId != cc.DescendantId)
+                    .Select(cc => categoryDict[cc.DescendantId])
+                    .ToList();
+
+                categoryDict[category.Id].Subcategories.AddRange(subcategories);
+            }
+
+            var rootCategories = categoryDict.Values
+                .Where(c => !categories.Any(cat => cat.Descendants.Any(cc => cc.DescendantId == c.Id && cc.AncestorId != c.Id)))
+                .ToList();
+
+            return Ok(rootCategories);
+        }
+
+        [HttpGet("categories/{id}")]
+        public async Task<IActionResult> GetSubcategories(int id)
+        {
+            var subcategories = await _context.CategoryClosures
+                .Where(cc => cc.AncestorId == id && cc.AncestorId != cc.DescendantId)
+                .Include(cc => cc.Descendant)
+                .Select(cc => new CategoryDto
+                {
+                    Id = cc.Descendant.Id,
+                    Name = cc.Descendant.Name
+                })
+                .ToListAsync();
+
+            return Ok(subcategories);
         }
 
         [HttpPut("categories/{id}")]
-        public async Task<IActionResult> UpdateCategory(int id, CategoryDto categoryDto)
+        public async Task<IActionResult> UpdateCategory(int id, [FromBody] CategoryDto CategoryDto)
         {
             var category = await _context.Categories.FindAsync(id);
-            if (category == null) return NotFound();
+            if (category == null)
+            {
+                return NotFound();
+            }
 
-            category.Name = categoryDto.Name;
-
-            _context.Categories.Update(category);
+            category.Name = CategoryDto.Name;
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Category updated successfully" });
+            return NoContent();
         }
 
         [HttpDelete("categories/{id}")]
         public async Task<IActionResult> DeleteCategory(int id)
         {
-            try
+            var category = await _context.Categories.FindAsync(id);
+            if (category == null)
             {
-                Console.WriteLine("I am deleting category " + id);
-                var category = await _context.Categories.FindAsync(id);
-                if (category == null) return NotFound();
-
-                _context.Categories.Remove(category);
-                await _context.SaveChangesAsync();
-
-                return Ok(new { message = "Category deleted successfully" });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"An error occurred: {ex.Message}");
-                return StatusCode(500, new { message = "Internal server error" });
-            }
-        }
-
-        [HttpGet("categories/{categoryId}/sub")]
-        public async Task<ActionResult<IEnumerable<SubCategoryDto>>> GetSubCategoriesByCategoryId(int categoryId)
-        {
-            var subCategories = await _context.SubCategories
-                                              .Where(sc => sc.CategoryId == categoryId)
-                                              .ToListAsync();
-            var subCategoryDtos = subCategories.ConvertAll(sc => new SubCategoryDto
-            {
-                Id = sc.Id,
-                Name = sc.Name,
-                CategoryId = sc.CategoryId
-            });
-
-            return Ok(subCategoryDtos);
-        }
-
-        [HttpPost("categories/{categoryId}/sub")]
-        public async Task<IActionResult> CreateSubCategory(int categoryId, SubCategoryDto subCategoryDto)
-        {
-            var subCategory = new SubCategory
-            {
-                Name = subCategoryDto.Name,
-                CategoryId = categoryId
-            };
-
-            _context.SubCategories.Add(subCategory);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "SubCategory created successfully" });
-        }
-
-        [HttpPut("categories/sub/{id}")]
-        public async Task<IActionResult> UpdateSubCategory(int id, SubCategoryDto subCategoryDto)
-        {
-            var subCategory = await _context.SubCategories.FindAsync(id);
-            if (subCategory == null)
                 return NotFound();
+            }
 
-            subCategory.Name = subCategoryDto.Name;
-            subCategory.CategoryId = subCategoryDto.CategoryId;
+            if (_context.Products.Any(p => p.CategoryId == id))
+            {
+                return BadRequest("Cannot delete category with associated products.");
+            }
 
-            _context.SubCategories.Update(subCategory);
+            _context.Categories.Remove(category);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "SubCategory updated successfully" });
+            return NoContent();
         }
 
-        [HttpDelete("categories/sub/{id}")]
-        public async Task<IActionResult> DeleteSubCategory(int id)
-        {
-            var subCategory = await _context.SubCategories.FindAsync(id);
-            if (subCategory == null)
-                return NotFound();
-
-            _context.SubCategories.Remove(subCategory);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "SubCategory deleted successfully" });
-        }
 
         [HttpPost("products")]
         public async Task<IActionResult> CreateProduct(ProductDto productDto)
         {
-            var categoryExists = await _context.Categories.AnyAsync(c => c.Id == productDto.CategoryId);
-            if (!categoryExists)
+            var category = await _context.Categories
+            .Include(c => c.Descendants)
+            .FirstOrDefaultAsync(c => c.Id == productDto.CategoryId);
+
+            if (category == null)
             {
-                return BadRequest("Category does not exist.");
+                return BadRequest("Category not found");
             }
+
+            if (category.Descendants.Any(cc => cc.AncestorId != cc.DescendantId))
+            {
+                return BadRequest("");
+            }
+
             var product = new Product
             {
                 Name = productDto.Name,
@@ -164,7 +188,7 @@ namespace EcommerceBackend.Controllers
                 ImgUrl = productDto.ImgUrl,
                 Quantity = productDto.Quantity,
                 Price = productDto.Price,
-                CategoryId = productDto.CategoryId
+                CategoryId = productDto.CategoryId,
             };
 
             _context.Products.Add(product);
@@ -191,11 +215,65 @@ namespace EcommerceBackend.Controllers
             return Ok(productDtos);
         }
 
+        [HttpGet("products/{id}")]
+        public async Task<ActionResult<ProductDto>> GetProduct(int id)
+        {
+            var product = await _context.Products.Include(p => p.Category).FirstOrDefaultAsync(p => p.Id == id);
+            if (product == null) return NotFound();
+
+            var productDto = new ProductDto
+            {
+                Id = product.Id,
+                Name = product.Name,
+                Description = product.Description,
+                ImgUrl = product.ImgUrl,
+                Quantity = product.Quantity,
+                Price = product.Price,
+                CategoryId = product.CategoryId
+            };
+
+            return Ok(productDto);
+        }
+
+        [HttpGet("products/category/{id}")]
+        public async Task<IActionResult> GetProductsByCategoryId(int categoryId)
+        {
+            var products = await _context.Products
+                .Where(p => p.CategoryId == categoryId)
+                .Select(p => new ProductDto
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Description = p.Description,
+                    ImgUrl = p.ImgUrl,
+                    Quantity = p.Quantity,
+                    Price = p.Price,
+                    CategoryId = p.CategoryId
+                })
+                .ToListAsync();
+
+            return Ok(products);
+        }
+
         [HttpPut("products/{id}")]
         public async Task<IActionResult> UpdateProduct(int id, ProductDto productDto)
         {
             var product = await _context.Products.FindAsync(id);
             if (product == null) return NotFound();
+
+            var category = await _context.Categories
+            .Include(c => c.Descendants)
+            .FirstOrDefaultAsync(c => c.Id == productDto.CategoryId);
+
+            if (category == null)
+            {
+                return BadRequest("Category not found");
+            }
+
+            if (category.Descendants.Any(cc => cc.AncestorId != cc.DescendantId))
+            {
+                return BadRequest("");
+            }
 
             product.Name = productDto.Name;
             product.Description = productDto.Description;

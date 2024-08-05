@@ -81,7 +81,7 @@ namespace EcommerceBackend.Controllers
             return Ok(new { recoveryKey });
         }
 
-        [HttpPost("forgetpass")]
+        [HttpPost("forget-password")]
         public async Task<IActionResult> ForgetPassword(ForgetPasswordDto request)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == request.Email);

@@ -22,16 +22,65 @@ namespace EcommerceBackend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
+        public async Task<IActionResult> GetFirstLayerCategories()
         {
-            var categories = await _context.Categories.ToListAsync();
-            var categoryDtos = categories.ConvertAll(c => new CategoryDto
+            var firstLayerCategories = await _context.Categories
+                .Where(c => !_context.CategoryClosures
+                    .Any(cc => cc.DescendantId == c.Id && cc.AncestorId != c.Id))
+                .Select(c => new CategoryDto
+                {
+                    Id = c.Id,
+                    Name = c.Name
+                })
+                .ToListAsync();
+
+            return Ok(firstLayerCategories);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetSubcategories(int id)
+        {
+            var subcategories = await _context.CategoryClosures
+                .Where(cc => cc.AncestorId == id && cc.AncestorId != cc.DescendantId)
+                .Include(cc => cc.Descendant)
+                .Select(cc => new CategoryDto
+                {
+                    Id = cc.Descendant.Id,
+                    Name = cc.Descendant.Name
+                })
+                .ToListAsync();
+
+            return Ok(subcategories);
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetCategoryAll()
+        {
+            var categories = await _context.Categories
+                .Include(c => c.Descendants)
+                .ToListAsync();
+
+            var categoryDict = categories.ToDictionary(c => c.Id, c => new NestedCategoryDto
             {
                 Id = c.Id,
-                Name = c.Name,
+                Name = c.Name
             });
 
-            return Ok(categoryDtos);
+            foreach (var category in categories)
+            {
+                var subcategories = category.Descendants
+                    .Where(cc => cc.AncestorId == category.Id && cc.AncestorId != cc.DescendantId)
+                    .Select(cc => categoryDict[cc.DescendantId])
+                    .ToList();
+
+                categoryDict[category.Id].Subcategories.AddRange(subcategories);
+            }
+
+            var rootCategories = categoryDict.Values
+                .Where(c => !categories.Any(cat => cat.Descendants.Any(cc => cc.DescendantId == c.Id && cc.AncestorId != c.Id)))
+                .ToList();
+
+            return Ok(rootCategories);
         }
     }
 }

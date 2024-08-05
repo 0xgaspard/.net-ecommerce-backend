@@ -10,7 +10,7 @@ namespace EcommerceBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    // [Authorize]
     public class ProfileController : BaseController
     {
         private readonly DataContext _context;

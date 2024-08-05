@@ -10,7 +10,7 @@ namespace EcommerceBackend.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Product> Products { get; set; }
         public DbSet<Category> Categories { get; set; }
-        public DbSet<SubCategory> SubCategories { get; set; }
+        public DbSet<CategoryClosure> CategoryClosures { get; set; }
         public DbSet<Cart> Carts { get; set; }
         public DbSet<Order> Orders { get; set; }
         public DbSet<Review> Reviews { get; set; }
@@ -19,6 +19,27 @@ namespace EcommerceBackend.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+            modelBuilder.Entity<Category>()
+            .HasMany(c => c.Ancestors)
+            .WithOne(e => e.Descendant)
+            .HasForeignKey(e => e.DescendantId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Category>()
+                .HasMany(c => c.Descendants)
+                .WithOne(e => e.Ancestor)
+                .HasForeignKey(e => e.AncestorId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CategoryClosure>()
+                .HasKey(cc => new { cc.AncestorId, cc.DescendantId });
+
+            modelBuilder.Entity<Category>()
+                .HasMany(c => c.Products)
+                .WithOne(p => p.Category)
+                .HasForeignKey(p => p.CategoryId)
+                .OnDelete(DeleteBehavior.Restrict);
+
             base.OnModelCreating(modelBuilder);
 
             modelBuilder.Entity<OrderDetail>()
@@ -30,7 +51,7 @@ namespace EcommerceBackend.Data
                 Id = 1,
                 Username = "admin",
                 Email = "admin@ecommerce.com",
-                Password = BCrypt.Net.BCrypt.HashPassword("admin123"), 
+                Password = BCrypt.Net.BCrypt.HashPassword("admin123"),
                 Role = Role.Admin
             }
 

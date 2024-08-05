@@ -11,7 +11,7 @@ namespace EcommerceBackend.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    // [Authorize]
     public class ReviewsController : BaseController
     {
         private readonly DataContext _context;

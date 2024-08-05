@@ -11,8 +11,8 @@ using Microsoft.AspNetCore.Authorization;
 namespace EcommerceBackend.Controllers
 {
     [Route("api/[controller]")]
-    [ApiController]
-    [Authorize]
+    // [ApiController]
+    // [Authorize]
     public class EmailVerificationController : BaseController
     {
         private readonly DataContext _context;

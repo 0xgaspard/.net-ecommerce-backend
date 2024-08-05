@@ -12,8 +12,8 @@ namespace EcommerceBackend.Services
         private readonly DataContext _context;
         private readonly string smtpServer = "smtp.gmail.com";
         private readonly int smtpPort = 587;
-        private readonly string smtpUsername = "boye11251@gmail.com";
-        private readonly string smtpPassword = "Bo 0++01++0 yes";
+        private readonly string smtpUsername = "******@gmail.com";
+        private readonly string smtpPassword = "**********";
 
         public EmailService(DataContext context)
         {
